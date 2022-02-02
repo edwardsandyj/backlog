@@ -1,2 +1,2 @@
 # backlog
-REST API for maintaining a backlog of personal User Stories
+REST service for maintaining a backlog of personal User Stories
