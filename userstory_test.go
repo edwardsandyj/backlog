@@ -58,6 +58,54 @@ func TestAddUserStory(t *testing.T) {
 
 }
 
+var casesTestUpdateUserStory = []struct {
+	name     string
+	saveFunc func(story UserStory) error
+	desc     []byte
+	want     int
+}{
+	{
+		name: "return OK if successful",
+		desc: []byte(`{"ID":1, "Description":"Save route map offline", "Closed":true }`),
+		want: http.StatusOK,
+	},
+	{
+		name: "return bad request if JSON decoding error",
+		desc: []byte(""),
+		want: http.StatusBadRequest,
+	},
+	{
+		name: "return bad request if Stories.SaveUserStory returns error",
+		saveFunc: func(story UserStory) error {
+			return errors.New("error updating in Stories")
+		},
+		desc: []byte(`{"ID":1, "Description":"Save route map offline", "Closed":true}`),
+		want: http.StatusBadRequest,
+	},
+	{
+		name: "return bad request if UserStory description is empty",
+		desc: []byte(`{"Description":""}`),
+		want: http.StatusBadRequest,
+	},
+}
+
+func TestUpdateUserStory(t *testing.T) {
+	t.Log("UpdateUserStory")
+	for _, testcase := range casesTestUpdateUserStory {
+		t.Logf(testcase.name)
+		recorder := httptest.NewRecorder()
+		request, _ := http.NewRequest(http.MethodPut, "/userstories/1", bytes.NewBuffer(testcase.desc))
+		defer func() { s = &Stories{} }()
+		s = &mockedBacklog{
+			SaveUserStoryFunc: testcase.saveFunc,
+		}
+		UpdateUserStory(recorder, request)
+		if recorder.Code != testcase.want {
+			t.Errorf("Output --> Got %d want %d", recorder.Code, testcase.want)
+		}
+	}
+}
+
 func TestGetOpenUserStories(t *testing.T) {
 	t.Log("GetOpenUserStories")
 	t.Log("want OpenUserStories data as JSON")

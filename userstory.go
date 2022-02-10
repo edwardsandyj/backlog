@@ -77,7 +77,14 @@ func (s *Stories) GetOpenUserStories() []UserStory {
 	return openstories
 }
 
-// AddUserStory accepts new user story as Post request from JSON and returns
+func validateUserStory(u UserStory) error {
+	if u.Description == "" {
+		return errors.New("Description is empty")
+	}
+	return nil
+}
+
+// AddUserStory accepts new user story as Post request from JSON, returns
 // ⎬-- 201 header if successful
 // ⎬-- 400 header if
 // 	   ⎬-- failed to decode to string
@@ -89,14 +96,37 @@ func AddUserStory(writer http.ResponseWriter, recorder *http.Request) {
 		http.Error(writer, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if text.Description == "" {
-		http.Error(writer, "Description is empty", http.StatusBadRequest)
+	if err := validateUserStory(text); err != nil {
+		http.Error(writer, err.Error(), http.StatusBadRequest)
 	}
 	if err := s.SaveUserStory(text); err != nil {
 		http.Error(writer, err.Error(), http.StatusBadRequest)
 		return
 	}
 	writer.WriteHeader(http.StatusCreated)
+}
+
+// UpdateUserStort accepts updated user story as Put request from JSON, returns
+// ⎬-- 200 header if successful
+// ⎬-- 400 header if
+// 	   ⎬-- failed to decode to string
+//	   ⎬-- Stories.SaveUserStory returns error
+//	   ⎬-- UserStory description is empty
+func UpdateUserStory(writer http.ResponseWriter, recorder *http.Request) {
+	var text UserStory
+	if err := json.NewDecoder(recorder.Body).Decode(&text); err != nil {
+		http.Error(writer, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := validateUserStory(text); err != nil {
+		http.Error(writer, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := s.SaveUserStory(text); err != nil {
+		http.Error(writer, err.Error(), http.StatusBadRequest)
+		return
+	}
+	writer.WriteHeader(http.StatusOK)
 }
 
 // GetOpenUserStories returns unfinished user stories in response as JSON
