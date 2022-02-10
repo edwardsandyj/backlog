@@ -15,26 +15,41 @@ type UserStory struct {
 	Closed      bool   `json:"closed"`      // story completion status
 }
 
-// Datastore holds all user stories saved in the application
-type Datastore struct {
-	UserStories []UserStory
+// Datastore holds a slice of all user stories kept by the application
+type Stories struct {
+	userstories []UserStory
 	lastID      int // mark IDs that are already used in UserStories
 }
 
-var ds = &Datastore{}
+// Backlog defines the services on a Stories object
+type Backlog interface {
+	GetOpenUserStories() []UserStory
+}
+
+var s Backlog = &Stories{}
+
+// *Mock* GetOpenUserStories call that implements interface Backlog
+type mockedBacklog struct{}
+
+func (mb *mockedBacklog) GetOpenUserStories() []UserStory {
+	return []UserStory{
+		{1, "Find Airbnbs", false},
+		{2, "Get car repaired", false},
+	}
+}
 
 // SaveUserStory creates new or updates an existing UserStory in Datastore
-func (ds *Datastore) SaveUserStory(story UserStory) error {
+func (s *Stories) SaveUserStory(story UserStory) error {
 	if story.ID == 0 {
-		ds.lastID++
-		story.ID = ds.lastID
-		ds.UserStories = append(ds.UserStories, story)
+		s.lastID++
+		story.ID = s.lastID
+		s.userstories = append(s.userstories, story)
 		return nil
 	}
 
-	for i, t := range ds.UserStories {
+	for i, t := range s.userstories {
 		if t.ID == story.ID {
-			ds.UserStories[i] = story
+			s.userstories[i] = story
 			return nil
 		}
 	}
@@ -42,9 +57,9 @@ func (ds *Datastore) SaveUserStory(story UserStory) error {
 }
 
 // GetOpenUserStories returns all unfinished user stories in Datastore
-func (ds *Datastore) GetOpenUserStories() []UserStory {
+func (s *Stories) GetOpenUserStories() []UserStory {
 	var openstories []UserStory
-	for _, story := range ds.UserStories {
+	for _, story := range s.userstories {
 		if !story.Closed {
 			openstories = append(openstories, story)
 		}
@@ -54,7 +69,7 @@ func (ds *Datastore) GetOpenUserStories() []UserStory {
 
 // GetOpenUserStories writes unfinished user stories in response as JSON
 func GetOpenUserStories(writer http.ResponseWriter, recorder *http.Request) {
-	text := ds.GetOpenUserStories()
+	text := s.GetOpenUserStories()
 	jason, _ := json.Marshal(text)
 	writer.Header().Set("Content-Type", "application/json")
 	writer.Write(jason)
