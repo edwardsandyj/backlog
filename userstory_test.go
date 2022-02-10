@@ -1,26 +1,31 @@
 package backlog
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"reflect"
 	"testing"
 )
 
 func TestGetOpenUserStories(t *testing.T) {
 	t.Log("GetOpenUserStories")
-
-	ds := Datastore{
-		userstories: []UserStory{
-			{1, "Find Airbnbs", true},
+	t.Log("want open user stories as JSON")
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest(http.MethodGet, "/userstories/open", nil)
+	ds = &Datastore{
+		UserStories: []UserStory{
+			{1, "Find Airbnbs", false},
 			{2, "Get car repaired", false},
 		},
 	}
+	GetOpenUserStories(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Errorf("Output --> Got %d want %d", recorder.Code, http.StatusOK)
+	}
+	want := "[{\"id\":1,\"description\":\"Find Airbnbs\",\"closed\":false},{\"id\":2,\"description\":\"Get car repaired\",\"closed\":false}]"
 
-	want := []UserStory{ds.userstories[1]}
-
-	t.Log("want the stories which still need to be closed")
-
-	if ans := ds.GetOpenUserStories(); !reflect.DeepEqual(ans, want) {
-		t.Errorf("Got %v want %v", ans, want)
+	if ans := recorder.Body.String(); ans != want {
+		t.Errorf("Output --> Got %s want %s", ans, want)
 	}
 }
 
@@ -42,7 +47,7 @@ var casesTestSaveUserStory = []struct {
 	{
 		name: "update existing story in datastore",
 		ds: &Datastore{
-			userstories: []UserStory{
+			UserStories: []UserStory{
 				{1, "Find Airbnbs", false},
 			},
 		},
@@ -64,8 +69,8 @@ func TestSaveUserStory(t *testing.T) {
 	for _, testcase := range casesTestSaveUserStory {
 		t.Log(testcase.name)
 		testcase.ds.SaveUserStory(testcase.story)
-		if !reflect.DeepEqual(testcase.ds.userstories, testcase.want) {
-			t.Errorf("=> Got %v want %v", testcase.ds.userstories, testcase.want)
+		if !reflect.DeepEqual(testcase.ds.UserStories, testcase.want) {
+			t.Errorf("=> Got %v want %v", testcase.ds.UserStories, testcase.want)
 		}
 	}
 }
