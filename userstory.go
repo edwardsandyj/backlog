@@ -106,7 +106,7 @@ func AddUserStory(writer http.ResponseWriter, recorder *http.Request) {
 	writer.WriteHeader(http.StatusCreated)
 }
 
-// UpdateUserStort accepts updated user story as Put request from JSON, returns
+// UpdateUserStory accepts updated user story as Put request from JSON, returns
 // ⎬-- 200 header if successful
 // ⎬-- 400 header if
 // 	   ⎬-- failed to decode to string
