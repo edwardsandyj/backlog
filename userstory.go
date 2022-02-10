@@ -136,12 +136,3 @@ func GetOpenUserStories(writer http.ResponseWriter, recorder *http.Request) {
 	writer.Header().Set("Content-Type", "application/json")
 	writer.Write(jason)
 }
-
-func main() {
-	// Registering handlers for router in http package
-	http.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
-		writer.Write([]byte("HTTP server started..."))
-	})
-	// Start using default router
-	http.ListenAndServe(":8080", nil)
-}
